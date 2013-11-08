@@ -35,8 +35,8 @@ loopOne dna = do
                             then (r ++ mdna, prna++trna)
                             else (tdna, prna++trna)
 --        (newDna, rna) = loop dna
-    putStrLn $ "match: " ++ (show (isJust justM))
-    putStrLn $ "DNA after template: " ++ (show $ length tdna)
+--    putStr "."
+--    putStrLn $ "DNA after template: " ++ (show $ length tdna)
     appendFile "tmp/rna.txt" rna
     putStrLn $ show ps ++ "    " ++ show ts
 --    putStrLn $ "ENV: " ++ (show env)
@@ -89,8 +89,10 @@ replace :: [Template.Model] -> [Env] -> String
 --replace a b | trace ("Replace "++show a++" "++show b ) False = undefined
 replace [] _ = []
 replace ((T_CHAR c):ts) es = c:(replace ts es)
-replace ((REF n l):ts) es = (protect e l) ++ (replace ts es) where (ENV e) = es !! n
-replace ((LEN n):ts) es = (asnat $ length e) ++ (replace ts es) where (ENV e) = es !! n
+replace ((REF n l):ts) es = (protect e l) ++ (replace ts es)
+    where (ENV e) =  if (length es > n) then es !! n else ENV ""
+replace ((LEN n):ts) es = (asnat $ length e) ++ (replace ts es)
+    where (ENV e) = if (length es > n) then es !! n else ENV ""
 
 --matchOne ps xs = error ("Error "++ (show xs))
 --matchOne xs (SUB s) = if (isJust t) then Just (Nothing, fromJust t) else Nothing where t = dropWhileFound s xs
