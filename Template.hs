@@ -1,17 +1,17 @@
-module Template(template, Model(T_CHAR, REF, LEN)) where
+module Template(template, Model(T_CHAR_SEQ, REF, LEN)) where
 
 import Debug.Trace
 import Utils
 
-data Model = T_CHAR Char | REF Int Int | LEN Int
+data Model = REF Int Int | LEN Int | T_CHAR_SEQ [Char]
 
 template :: Dna -> ([Model], (Dna, Rna))
 --template s | trace (" >template\t "++s) False = undefined
 template [] = ([],([],[]))
-template ('C':xs) = (T_CHAR 'I':t, r) where (t,r) = template xs
-template ('F':xs) = (T_CHAR 'C':t, r) where (t,r) = template xs
-template ('P':xs) = (T_CHAR 'F':t, r) where (t,r) = template xs
-template ('I':'C':xs) = (T_CHAR 'P':t, r) where (t,r) = template xs
+template ('C':xs) = (addChar 'I' t, r) where (t,r) = template xs
+template ('F':xs) = (addChar 'C' t, r) where (t,r) = template xs
+template ('P':xs) = (addChar 'F' t, r) where (t,r) = template xs
+template ('I':'C':xs) = (addChar 'P' t, r) where (t,r) = template xs
 template ('I':'F':xs) = (m:ts,(d,r))
     where
         (m, dna) = ref xs
@@ -32,8 +32,13 @@ ref xs = (REF n l, nr)
      where (l,lr) = nat xs
            (n,nr) = nat lr
 
+addChar :: Char -> [Model] -> [Model]
+addChar c (T_CHAR_SEQ ch:ms) = T_CHAR_SEQ (c:ch):ms
+addChar c m = T_CHAR_SEQ (c:[]):m
+
+
 
 instance Show Model where
-  show (T_CHAR a) = show a
+  show (T_CHAR_SEQ a) = show a
   show (REF n l) = show n ++ "@" ++ show l
   show (LEN n) = '|': show n ++ "|"

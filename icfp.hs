@@ -1,6 +1,7 @@
 import Pattern
 import Template
 import Data.Maybe
+import Data.List
 import Utils
 import Debug.Trace
 import System.Environment
@@ -60,10 +61,12 @@ loop xs
 match :: [Pattern.Model] -> (String, [Env]) -> Maybe (String, (String, [Env]))
 match [] (xs,es) = Just([], (xs, es))
 --match a (b,c) | trace ("Match "++show a++" "++show (length c) ) False = undefined
-match ((CHAR c):ps) ((x:xs), es)
-    | x == c && isJust res = Just (x:(justFst res), justSnd res)
+match ((CHAR_SEQ s):ps) (xs, es)
+    | isJust rest && isJust res = Just (s ++ (justFst res), justSnd res)
     | otherwise = Nothing
-    where res = match ps (xs,es)
+    where
+        rest = stripPrefix s xs
+        res = match ps (fromJust rest,es)
 match ((NAT n):ps) (xs,es)
     | length xs >= n && isJust res = Just (h ++ (justFst res), justSnd res)
     | otherwise = Nothing
@@ -76,6 +79,16 @@ match ((SEQ s):ps) (xs,es)
     where
         split = splitAtTerm s xs
         res = match ps (justSnd $ split, es)
+
+match ((SEQ_END s):ps) (xs,es)
+    | isJust split && isJust res = Just ((justFst split) ++ s ++ (justFst res), justSnd res)
+    | otherwise = Nothing
+    where
+        split = splitAtTerm s xs
+        Just splitEnd = stripPrefix s (justSnd $ split)
+        res = match ps (splitEnd, es)
+
+
 match ((SUB s):ps) (xs, es)
     | isJust res && isJust next = Just (matched++(justFst next), justSnd next)
     | otherwise = Nothing
@@ -88,7 +101,7 @@ match ((SUB s):ps) (xs, es)
 replace :: [Template.Model] -> [Env] -> String
 --replace a b | trace ("Replace "++show a++" "++show b ) False = undefined
 replace [] _ = []
-replace ((T_CHAR c):ts) es = c:(replace ts es)
+replace ((T_CHAR_SEQ c):ts) es = c ++ (replace ts es)
 replace ((REF n l):ts) es = (protect e l) ++ (replace ts es)
     where (ENV e) =  if (length es > n) then es !! n else ENV ""
 replace ((LEN n):ts) es = (asnat $ length e) ++ (replace ts es)
