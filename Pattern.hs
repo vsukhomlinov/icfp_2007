@@ -1,13 +1,13 @@
-module Pattern (Model(NAT, SEQ, SEQ_END, SUB, CHAR_SEQ), pattern
+module Pattern (Model(NAT, SEQ, SEQ_END, SUB, CHAR_SEQ), FlatModel(FLAT_ENV), pattern, flatten, addChar
 ) where
 
 import Debug.Trace
 import Utils
 
-data Model = NAT Int | SEQ String | SEQ_END String | SUB [Model] | CHAR_SEQ [Char]
+data Model = NAT Int | SEQ String | SEQ_END String | SUB [Model] | CHAR_SEQ [Char] deriving (Eq)
+data FlatModel = FLAT_ENV Int Int deriving (Eq)
 
 pattern :: Dna -> ([Model], (Dna, Rna))
---pattern s | trace (" >pattern "++s) False = undefined
 pattern [] = ([],([],[]))
 pattern ('C':xs) = (addChar 'I' p, r) where (p, r) = pattern xs
 pattern ('F':xs) = (addChar 'C' p, r) where (p, r) = pattern xs
@@ -16,7 +16,7 @@ pattern ('I':'C':xs) = (addChar 'P' p, r) where (p, r) = pattern xs
 pattern ('I':'P':xs) = (NAT i:p, r)
     where (i,n) = nat xs
           (p,r) = pattern n
-pattern ('I':'F':_:xs) = (SEQ s:p, r)
+pattern ('I':'F':_:xs) = (addSeq s p, r)
     where (s, n) = consts xs
           (p,r) = pattern xs
 pattern ('I':'I':'I':xs) = (ps, (d, rna++r))
@@ -30,14 +30,23 @@ pattern ('I':'I':'C':xs) = ([],(xs,[]))
 pattern ('I':'I':'F':xs) = ([],(xs,[]))
 pattern (x:xs) = error "Finish: not matching symbol"
 
+addSeq :: String -> [Model] -> [Model]
+addSeq s (CHAR_SEQ cs:ms)
+    | s == cs = SEQ_END s:ms
+    | otherwise = SEQ s:CHAR_SEQ cs:ms
 
 addChar :: Char -> [Model] -> [Model]
---addChar c (CHAR_SEQ ch:SEQ s:ms)
---    | s == newSeq = SEQ_END s:ms
---    | otherwise = CHAR_SEQ newSeq:SEQ s:ms
---        where newSeq = ch ++ (c:[])
 addChar c (CHAR_SEQ ch:ms) = CHAR_SEQ (c:ch):ms
 addChar c m = CHAR_SEQ (c:[]):m
+
+
+--
+
+flatten :: [Model] -> [FlatModel]
+flatten [] = []
+flatten ms = []
+
+
 
 instance Show Model where
   show (NAT n) = '!':show n
@@ -45,3 +54,6 @@ instance Show Model where
   show (SEQ_END s) = show $ "??" ++ s
   show (SUB p) = "(" ++ (show p) ++")"
   show (CHAR_SEQ s) = show s
+
+instance Show FlatModel where
+    show (FLAT_ENV i l) = "{"++(show i)++"}"

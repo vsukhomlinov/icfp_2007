@@ -81,13 +81,11 @@ match ((SEQ s):ps) (xs,es)
         res = match ps (justSnd $ split, es)
 
 match ((SEQ_END s):ps) (xs,es)
-    | isJust split && isJust res = Just ((justFst split) ++ s ++ (justFst res), justSnd res)
+    | isJust split && isJust res = Just ((justFst split) ++ (justFst res), justSnd res)
     | otherwise = Nothing
     where
-        split = splitAtTerm s xs
-        Just splitEnd = stripPrefix s (justSnd $ split)
-        res = match ps (splitEnd, es)
-
+        split = splitAfterTerm s xs
+        res = match ps (justSnd $ split, es)
 
 match ((SUB s):ps) (xs, es)
     | isJust res && isJust next = Just (matched++(justFst next), justSnd next)
@@ -97,6 +95,9 @@ match ((SUB s):ps) (xs, es)
         matched = (justFst res)
         envs = justSnd res
         next = match ps (fst $ envs, (snd $ envs) ++ [ENV $ matched])
+
+
+
 
 replace :: [Template.Model] -> [Env] -> String
 --replace a b | trace ("Replace "++show a++" "++show b ) False = undefined

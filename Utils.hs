@@ -1,7 +1,8 @@
-module Utils (consts, nat, dropWhileFound, splitAtTerm, protect, asnat, justFst, justSnd, Dna, Rna) where
+module Utils (consts, nat, dropWhileFound, splitAtTerm, splitAfterTerm, protect, asnat, justFst, justSnd, Dna, Rna) where
 
 import Data.List
 import Data.Maybe
+import Data.Strings
 
 consts :: [Char] -> ([Char],[Char])
 consts ('C':xs) = ('I':c, s) where (c,s) = consts xs
@@ -28,14 +29,24 @@ dropWhileFound term source
 splitAtTerm :: String -> String -> Maybe (String, String)
 splitAtTerm [] s = Just ([], s)
 splitAtTerm _ [] = Nothing
+--splitAtTerm term source
+--    | isPrefixOf term source = Just ([], source)
+--    | otherwise  = ret
+--    where
+--        (x:rest) = source
+--        res = splitAtTerm term rest
+--        (h,t) = fromJust res
+--        ret = if (isJust res) then Just (x:h, t) else Nothing
 splitAtTerm term source
-    | isPrefixOf term source = Just ([], source)
-    | otherwise  = ret
-    where
-        (x:rest) = source
-        res = splitAtTerm term rest
-        (h,t) = fromJust res
-        ret = if (isJust res) then Just (x:h, t) else Nothing
+    | t == [] = Nothing
+    | otherwise = Just (h, t)
+    where (h,t) = strBreak term source
+
+splitAfterTerm term source
+    | t == []  && source == h = Nothing
+    | otherwise = Just (strAppend term h, t)
+    where (h,t) = strSplit term source
+
 
 
 protect :: String -> Int -> String
