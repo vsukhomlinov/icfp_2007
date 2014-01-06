@@ -9,6 +9,7 @@ import System.Environment
 main = do
 --    (pref:_) <- getArgs
     writeFile "tmp/rna.txt" ""
+    writeFile "tmp/match.log" ""
     text <- readFile "resources/endo.dna"
     loopOne (seq_debug ++ text)
 --    let (dna, rna) = loop text
@@ -35,28 +36,41 @@ loopOne dna = do
         (newDna, rna) = if (isJust justM)
                             then (r ++ mdna, prna++trna)
                             else (tdna, prna++trna)
---        (newDna, rna) = loop dna
---    putStr "."
---    putStrLn $ "DNA after template: " ++ (show $ length tdna)
     appendFile "tmp/rna.txt" rna
+    appendFile "tmp/match.log" ((show ps) ++ (show ts)++"\n")
+    appendFile "tmp/match.log" (show (flatten ps tdna)++"\n")
     putStrLn $ show ps ++ "    " ++ show ts
---    putStrLn $ "ENV: " ++ (show env)
---    putStrLn $ "Old DNA: " ++ (show $ length mdna)
---    putStrLn $ "Attached DNA: " ++ (show $ length r)
+--    putStrLn $ show (flatten ps tdna)
+--    putStr "."
+    loop dna
     loopOne newDna
 
-
-
-loop :: Dna -> (Dna, Rna)
+loop :: Dna -> IO ()
 loop [] = error "Finish"
-loop xs
-    | isJust justM = (r ++ mdna, rna++trna)
-    | otherwise = (mdna, rna++trna)
-    where (ps, (dna,rna)) = pattern xs
-          (ts, (tdna,trna)) = template dna
-          justM = match ps (tdna,[])
-          (mdna, env) = justSnd justM
-          r = replace ts env
+loop dna = do
+    let (ps, (pdna,prna)) = pattern dna
+        (ts, (tdna,trna)) = template pdna
+        rna = prna++trna
+        flat = mergeModels ps ts tdna
+
+--        newDna = if(isJust flat)
+--                    then ""
+--                        loop $ prepareDna refs tpl tdna
+--                    else ""
+--    appendFile "tmp/rna.txt" rna
+--    appendFile "tmp/match.log" ((show ps) ++ (show ts)++"\n")
+--    appendFile "tmp/match.log" (show flat ++"\n")
+
+--      putStrLn $ show flat
+
+    putStrLn $ show flat
+--    loop newDna
+    return ()
+
+prepareDna :: [(Int,Int)] -> [Template.Model] -> Dna -> Dna
+prepareDna rs ts dna = ""
+
+
 
 match :: [Pattern.Model] -> (String, [Env]) -> Maybe (String, (String, [Env]))
 match [] (xs,es) = Just([], (xs, es))
@@ -96,6 +110,25 @@ match ((SUB s):ps) (xs, es)
         envs = justSnd res
         next = match ps (fst $ envs, (snd $ envs) ++ [ENV $ matched])
 
+mergeModels :: [Pattern.Model] -> [Template.Model] -> Dna -> [FlatModel]
+mergeModels ps ts dna
+    | isNothing flatPattern = []
+    | otherwise  = map (mergeSort dna ranges) (ts++[REF (length ranges-1) 0])
+    where
+        flatPattern = flatten ps dna
+        dnaIndex = justFst flatPattern
+        ranges = justSnd flatPattern ++ [(dnaIndex, length dna - dnaIndex)]
+
+
+mergeSort :: Dna -> [(Int,Int)] -> Template.Model -> FlatModel
+mergeSort _ rgs (REF n 0) = RANGE i l
+    where (i,l) = if (length rgs > n) then rgs !! n else (0,0)
+mergeSort dna rgs (REF n p) = CHARS $ protect (take l (drop i dna)) p
+    where (i,l) = if (length rgs > n) then rgs !! n else (0,0)
+mergeSort _ _ (T_CHAR_SEQ s) = CHARS s
+mergeSort _ rgs (LEN n) = CHARS $ asnat l
+    where (_,l) = if (length rgs > n) then rgs !! n else (0,0)
+
 
 
 
@@ -111,22 +144,15 @@ replace ((LEN n):ts) es = (asnat $ length e) ++ (replace ts es)
 --matchOne ps xs = error ("Error "++ (show xs))
 --matchOne xs (SUB s) = if (isJust t) then Just (Nothing, fromJust t) else Nothing where t = dropWhileFound s xs
 
-data Search = FOUND String | NOT_FOUND
+data FlatModel = CHARS String | RANGE Int Int
 
-data Match = NEXT String | RETURN String | RESULT String String
 data Env = ENV String
-
-instance Show Match where
-  show (NEXT s) = "> "++s
-  show (RETURN s) = "RETURN " ++ s
-  show (RESULT a b) = show a
-
-instance Show Search where
-  show (FOUND s) = show s
-  show NOT_FOUND = "Not found"
 
 instance Show Env where
     show (ENV s) = show $ length s
+instance Show FlatModel where
+    show (CHARS s) = show s
+    show (RANGE i l) = "("++show i++" "++show l++")"
 
 
 

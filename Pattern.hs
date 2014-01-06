@@ -1,11 +1,15 @@
-module Pattern (Model(NAT, SEQ, SEQ_END, SUB, CHAR_SEQ), FlatModel(FLAT_ENV), pattern, flatten, addChar
+module Pattern (Model(NAT, SEQ, SEQ_END, SUB, CHAR_SEQ), Range, pattern, addChar, flatten
 ) where
 
 import Debug.Trace
+import Data.Strings
+import Data.List
+import Data.Maybe
 import Utils
 
 data Model = NAT Int | SEQ String | SEQ_END String | SUB [Model] | CHAR_SEQ [Char] deriving (Eq)
 data FlatModel = FLAT_ENV Int Int deriving (Eq)
+data Range = Range Int Int deriving (Eq)
 
 pattern :: Dna -> ([Model], (Dna, Rna))
 pattern [] = ([],([],[]))
@@ -40,11 +44,37 @@ addChar c (CHAR_SEQ ch:ms) = CHAR_SEQ (c:ch):ms
 addChar c m = CHAR_SEQ (c:[]):m
 
 
---
+flatten :: [Model] -> Dna -> Maybe(Int, [(Int,Int)])
+flatten ms dna = flatten_ Nothing 0 ms dna
+--flatten ms = foldl ()
 
-flatten :: [Model] -> [FlatModel]
-flatten [] = []
-flatten ms = []
+flatten_ :: Maybe(Int) -> Int -> [Model] -> Dna -> Maybe(Int,[(Int,Int)])
+--flatten_ m i ms | trace ("Flatten "++show m++" "++show i ++ " " ++ show ms ) False = undefined
+flatten_ m i [] _
+    | isNothing m = Just (i,[])
+    | otherwise = Just (i,[(mark,i-mark)])
+        where mark = fromJust m
+flatten_ m i (NAT n:ms) dna = flatten_ m (i+n) ms dna
+flatten_ m i (SUB ss:ms) dna
+    | isJust subRes && isJust tailRes = Just (justFst tailRes, justSnd subRes ++ justSnd tailRes)
+    | otherwise = Nothing
+    where
+        subRes = flatten_ (Just i) i ss dna
+        tailRes = flatten_ m (justFst subRes)  ms dna
+--        (ind, rs) = flatten_ (Just i) i ss
+--        (newInd, newRs) = flatten_ m ind ms
+flatten_ m i (CHAR_SEQ cs:ms) dna
+    | isFound = flatten_ m (i+length cs) ms dna
+    | otherwise = Nothing
+    where isFound = isPrefixOf cs (strDrop i dna)
+flatten_ m i (SEQ_END cs:ms) dna
+    | isJust match = flatten_ m (i+length cs+length (justFst match)) ms dna
+    | otherwise = Nothing
+    where match = splitAtTerm cs (strDrop i dna)
+
+
+
+--flat :: Model -> Flat ->
 
 
 
@@ -55,5 +85,5 @@ instance Show Model where
   show (SUB p) = "(" ++ (show p) ++")"
   show (CHAR_SEQ s) = show s
 
-instance Show FlatModel where
-    show (FLAT_ENV i l) = "{"++(show i)++"}"
+instance Show Range where
+    show (Range f t) = "("++show f++":"++show t++")"
