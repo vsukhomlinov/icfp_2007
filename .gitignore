@@ -6,4 +6,7 @@ cabal-dev
 *.chs.h
 .virthualenv
 .idea/*
+*.iml
+**/*.iml
 tmp/*
+bin
