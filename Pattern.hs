@@ -54,7 +54,9 @@ flatten_ m i [] _
     | isNothing m = Just (i,[])
     | otherwise = Just (i,[(mark,i-mark)])
         where mark = fromJust m
-flatten_ m i (NAT n:ms) dna = flatten_ m (i+n) ms dna
+flatten_ m i (NAT n:ms) dna
+    | i+n > length dna = Nothing
+    | otherwise = flatten_ m (i+n) ms dna
 flatten_ m i (SUB ss:ms) dna
     | isJust subRes && isJust tailRes = Just (justFst tailRes, justSnd subRes ++ justSnd tailRes)
     | otherwise = Nothing
