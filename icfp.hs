@@ -28,6 +28,7 @@ seq_hlp="IIPIFFCPICFPPICIICCIICIPPPFIIC"
 loopOne :: Dna -> IO ()
 loopOne [] = error "Finish"
 loopOne dna = do
+    loopDna <- loop dna
     let (ps, (pdna,prna)) = pattern dna
         (ts, (tdna,trna)) = template pdna
         justM = match ps (tdna,[])
@@ -36,16 +37,19 @@ loopOne dna = do
         (newDna, rna) = if (isJust justM)
                             then (r ++ mdna, prna++trna)
                             else (tdna, prna++trna)
-    appendFile "tmp/rna.txt" rna
-    appendFile "tmp/match.log" ((show ps) ++ (show ts)++"\n")
-    appendFile "tmp/match.log" (show (flatten ps tdna)++"\n")
-    putStrLn $ show ps ++ "    " ++ show ts
---    putStrLn $ show (flatten ps tdna)
---    putStr "."
-    loop dna
-    loopOne newDna
 
-loop :: Dna -> IO ()
+--    appendFile "tmp/rna.txt" rna
+--    appendFile "tmp/match.log" ((show ps) ++ (show ts)++"\n")
+--    appendFile "tmp/match.log" (show (flatten ps tdna)++"\n")
+--    putStrLn $ show ps ++ "    " ++ show ts
+--    putStrLn $ show (flatten ps tdna)
+    putStr "."
+
+    putStrLn $ show (length newDna == (length loopDna))
+--    loop dna
+    loopOne loopDna
+
+loop :: Dna -> IO (Dna)
 loop [] = error "Finish"
 loop dna = do
     let (ps, (pdna,prna)) = pattern dna
@@ -53,22 +57,24 @@ loop dna = do
         rna = prna++trna
         flat = mergeModels ps ts tdna
 
+        newDna = foldl (\acc m ->  acc++(getChunk tdna m)) [] flat
+
 --        newDna = if(isJust flat)
 --                    then ""
 --                        loop $ prepareDna refs tpl tdna
 --                    else ""
---    appendFile "tmp/rna.txt" rna
+    appendFile "tmp/rna.txt" rna
 --    appendFile "tmp/match.log" ((show ps) ++ (show ts)++"\n")
 --    appendFile "tmp/match.log" (show flat ++"\n")
 
---      putStrLn $ show flat
-
-    putStrLn $ show flat
+--    putStrLn (show flat)
 --    loop newDna
-    return ()
+    return newDna
 
-prepareDna :: [(Int,Int)] -> [Template.Model] -> Dna -> Dna
-prepareDna rs ts dna = ""
+getChunk :: Dna -> FlatModel -> Dna
+getChunk _ (RANGE _ 0) = []
+getChunk dna (RANGE i l) = take l (drop i dna)
+getChunk dna (CHARS s) = s
 
 
 
@@ -112,7 +118,7 @@ match ((SUB s):ps) (xs, es)
 
 mergeModels :: [Pattern.Model] -> [Template.Model] -> Dna -> [FlatModel]
 mergeModels ps ts dna
-    | isNothing flatPattern = []
+    | isNothing flatPattern = [RANGE 0 $ length dna]
     | otherwise  = map (mergeSort dna ranges) (ts++[REF (length ranges-1) 0])
     where
         flatPattern = flatten ps dna
