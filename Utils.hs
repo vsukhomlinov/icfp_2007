@@ -1,8 +1,12 @@
-module Utils (consts, nat, dropWhileFound, splitAtTerm, splitAfterTerm, protect, asnat, justFst, justSnd, Dna, Rna) where
+module Utils (consts, nat, dropWhileFound, {-splitAtTerm, splitAfterTerm, -}protect, asnat, justFst, justSnd, Dna, Rna) where
 
+
+--TODO test nat vs nat_
+--TODO test quote vs quote_
 import Data.List
 import Data.Maybe
-import Data.Strings
+import Data.Bits
+--import Data.Strings
 
 consts :: [Char] -> ([Char],[Char])
 consts ('C':xs) = ('I':c, s) where (c,s) = consts xs
@@ -18,6 +22,12 @@ nat ('I':xs) = (2 * i, s) where (i,s) = nat xs
 nat ('F':xs) = (2 * i, s) where (i,s) = nat xs
 nat ('C':xs) = (1+2 * i, s) where (i,s) = nat xs
 
+nat_ :: [Char] -> (Int, [Char])
+nat_ cs = (n, drop (length h) (tail cs))
+    where   n = foldr f 0 h
+            f = (\ c acc -> acc*2 + if (c=='C') then 1 else 0)
+            h = takeWhile (\c -> c /= 'P') cs
+
 dropWhileFound :: String -> String -> Maybe String
 dropWhileFound [] s = Just s
 dropWhileFound _ [] = Nothing
@@ -26,7 +36,7 @@ dropWhileFound term source
     | otherwise  = dropWhileFound term rest
     where (_:rest) = source
 
-splitAtTerm :: String -> String -> Maybe (String, String)
+{-splitAtTerm :: String -> String -> Maybe (String, String)
 splitAtTerm [] s = Just ([], s)
 splitAtTerm _ [] = Nothing
 --splitAtTerm term source
@@ -45,7 +55,7 @@ splitAtTerm term source
 splitAfterTerm term source
     | t == []  && source == h = Nothing
     | otherwise = Just (strAppend term h, t)
-    where (h,t) = strSplit term source
+    where (h,t) = strSplit term source-}
 
 
 
@@ -60,11 +70,22 @@ quote ('C':xs) = 'F':(quote xs)
 quote ('F':xs) = 'P':(quote xs)
 quote ('P':xs) = 'I':'C':(quote xs)
 
+quote_ :: [Char] -> [Char]
+quote_ cs = foldr f [] cs
+    where f 'I' acc = 'C':acc
+          f 'C' acc = 'F':acc
+          f 'F' acc = 'P':acc
+          f 'P' acc = 'I':'C':acc
+
 asnat :: Int -> String
 asnat 0 = "P"
 asnat n
     | even n = 'I':asnat (div n 2)
     | otherwise = 'C':asnat ( div n 2)
+
+asnat_ :: Int -> [Char]
+asnat_ 0 = "P"
+asnat_ n = [x | x<-[0..bitSize n]]
 
 
 justFst :: (Maybe (a,b)) -> a
