@@ -7,3 +7,9 @@ cabal-dev
 .virthualenv
 .idea/*
 tmp/*
+bin/*
+*.prof
+*.iml
+
+icfp
+perfTest

@@ -2,7 +2,7 @@ module Pattern (Model(NAT, SEQ, SEQ_END, SUB, CHAR_SEQ), Range, pattern, addChar
 ) where
 
 import Debug.Trace
---import Data.Strings
+import Data.Strings
 import Data.List
 import Data.Maybe
 import Utils
@@ -44,7 +44,7 @@ addChar c (CHAR_SEQ ch:ms) = CHAR_SEQ (c:ch):ms
 addChar c m = CHAR_SEQ (c:[]):m
 
 
-{-flatten :: [Model] -> Dna -> Maybe(Int, [(Int,Int)])
+flatten :: [Model] -> Dna -> Maybe(Int, [(Int,Int)])
 flatten ms dna = flatten_ Nothing 0 ms dna
 --flatten ms = foldl ()
 
@@ -70,7 +70,7 @@ flatten_ m i (CHAR_SEQ cs:ms) dna
 flatten_ m i (SEQ_END cs:ms) dna
     | isJust match = flatten_ m (i+length cs+length (justFst match)) ms dna
     | otherwise = Nothing
-    where match = splitAtTerm cs (strDrop i dna)-}
+    where match = splitAtTerm cs (strDrop i dna)
 
 
 
