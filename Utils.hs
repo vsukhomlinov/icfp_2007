@@ -1,8 +1,11 @@
-module Utils (consts, nat, dropWhileFound, splitAtTerm, splitAfterTerm, protect, asnat, justFst, justSnd, Dna, Rna) where
+module Utils (consts, nat, quote, dropWhileFound, splitAtTerm, splitAfterTerm, protect, asnat, justFst, justSnd, Dna, Rna) where
+
 
 import Data.List
 import Data.Maybe
+import Data.Bits
 import Data.Strings
+import Numeric
 
 consts :: [Char] -> ([Char],[Char])
 consts ('C':xs) = ('I':c, s) where (c,s) = consts xs
@@ -12,11 +15,13 @@ consts ('I':'C':xs) = ('P':c, s) where (c,s) = consts xs
 consts xs = ([],xs)
 
 nat :: [Char] -> (Int, [Char])
-nat [] = error "Finish"
-nat ('P':xs) = (0, xs)
-nat ('I':xs) = (2 * i, s) where (i,s) = nat xs
-nat ('F':xs) = (2 * i, s) where (i,s) = nat xs
-nat ('C':xs) = (1+2 * i, s) where (i,s) = nat xs
+nat cs = (n, drop (length h) (tail cs))
+    where   n = foldr nat_fold 0 h
+            h = takeWhile (\c -> c /= 'P') cs
+
+nat_fold :: Char -> Int -> Int
+nat_fold 'C' acc = acc*2 + 1
+nat_fold _ acc = acc*2
 
 dropWhileFound :: String -> String -> Maybe String
 dropWhileFound [] s = Just s
@@ -62,10 +67,10 @@ quote ('P':xs) = 'I':'C':(quote xs)
 
 asnat :: Int -> String
 asnat 0 = "P"
+asnat 1 = "CP"
 asnat n
     | even n = 'I':asnat (div n 2)
     | otherwise = 'C':asnat ( div n 2)
-
 
 justFst :: (Maybe (a,b)) -> a
 justFst a

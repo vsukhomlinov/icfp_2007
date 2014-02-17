@@ -9,4 +9,10 @@ cabal-dev
 *.iml
 **/*.iml
 tmp/*
-bin
+bin/*
+*.prof
+*.iml
+
+icfp
+perfTest
+
